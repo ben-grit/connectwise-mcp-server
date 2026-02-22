@@ -60,6 +60,11 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
               type: 'string',
               description: 'Field to sort by with optional direction (e.g., "dateEntered desc", "id asc", "lastUpdated desc")',
             },
+            page: {
+              type: 'number',
+              description: 'Page number for pagination (default: 1)',
+              default: 1,
+            },
           },
         },
       },
@@ -131,6 +136,11 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
               type: 'string',
               description: 'Field to sort by with optional direction (e.g., "name asc", "dateAcquired desc")',
             },
+            page: {
+              type: 'number',
+              description: 'Page number for pagination (default: 1)',
+              default: 1,
+            },
           },
         },
       },
@@ -168,6 +178,11 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
               type: 'string',
               description: 'Field to sort by with optional direction (e.g., "lastName asc", "id desc")',
             },
+            page: {
+              type: 'number',
+              description: 'Page number for pagination (default: 1)',
+              default: 1,
+            },
           },
         },
       },
@@ -204,6 +219,11 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
             orderBy: {
               type: 'string',
               description: 'Field to sort by with optional direction (e.g., "timeStart desc", "id desc")',
+            },
+            page: {
+              type: 'number',
+              description: 'Page number for pagination (default: 1)',
+              default: 1,
             },
           },
         },
@@ -267,6 +287,11 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
               type: 'string',
               description: 'Field to sort by with optional direction (e.g., "name asc", "id desc")',
             },
+            page: {
+              type: 'number',
+              description: 'Page number for pagination (default: 1)',
+              default: 1,
+            },
           },
         },
       },
@@ -297,7 +322,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
     switch (name) {
       // Ticket operations
       case 'get_tickets': {
-        const result = await cwClient.getTickets(params.conditions, params.pageSize, params.orderBy);
+        const result = await cwClient.getTickets(params.conditions, params.pageSize, params.orderBy, params.page);
         // Ensure actualHours is always present (defaults to 0 if not returned by API)
         const ticketsWithHours = result.map((ticket: any) => ({
           ...ticket,
@@ -344,7 +369,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 
       // Company operations
       case 'get_companies': {
-        const result = await cwClient.getCompanies(params.conditions, params.pageSize, params.orderBy);
+        const result = await cwClient.getCompanies(params.conditions, params.pageSize, params.orderBy, params.page);
         return {
           content: [
             {
@@ -369,7 +394,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 
       // Contact operations
       case 'get_contacts': {
-        const result = await cwClient.getContacts(params.conditions, params.pageSize, params.orderBy);
+        const result = await cwClient.getContacts(params.conditions, params.pageSize, params.orderBy, params.page);
         return {
           content: [
             {
@@ -394,7 +419,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 
       // Time Entry operations
       case 'get_time_entries': {
-        const result = await cwClient.getTimeEntries(params.conditions, params.pageSize, params.orderBy);
+        const result = await cwClient.getTimeEntries(params.conditions, params.pageSize, params.orderBy, params.page);
         return {
           content: [
             {
@@ -419,7 +444,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 
       // Configuration operations
       case 'get_configurations': {
-        const result = await cwClient.getConfigurations(params.conditions, params.pageSize, params.orderBy);
+        const result = await cwClient.getConfigurations(params.conditions, params.pageSize, params.orderBy, params.page);
         return {
           content: [
             {

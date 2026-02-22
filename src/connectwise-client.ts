@@ -31,8 +31,8 @@ export class ConnectWiseClient {
   }
 
   // Service Desk / Tickets
-  async getTickets(conditions?: string, pageSize: number = 25, orderBy?: string): Promise<any> {
-    const params: any = { pageSize };
+  async getTickets(conditions?: string, pageSize: number = 25, orderBy?: string, page: number = 1): Promise<any> {
+    const params: any = { pageSize, page };
     if (conditions) {
       params.conditions = conditions;
     }
@@ -59,8 +59,8 @@ export class ConnectWiseClient {
   }
 
   // Companies
-  async getCompanies(conditions?: string, pageSize: number = 25, orderBy?: string): Promise<any> {
-    const params: any = { pageSize };
+  async getCompanies(conditions?: string, pageSize: number = 25, orderBy?: string, page: number = 1): Promise<any> {
+    const params: any = { pageSize, page };
     if (conditions) {
       params.conditions = conditions;
     }
@@ -77,8 +77,8 @@ export class ConnectWiseClient {
   }
 
   // Contacts
-  async getContacts(conditions?: string, pageSize: number = 25, orderBy?: string): Promise<any> {
-    const params: any = { pageSize };
+  async getContacts(conditions?: string, pageSize: number = 25, orderBy?: string, page: number = 1): Promise<any> {
+    const params: any = { pageSize, page };
     if (conditions) {
       params.conditions = conditions;
     }
@@ -95,8 +95,8 @@ export class ConnectWiseClient {
   }
 
   // Time Entries
-  async getTimeEntries(conditions?: string, pageSize: number = 25, orderBy?: string): Promise<any> {
-    const params: any = { pageSize };
+  async getTimeEntries(conditions?: string, pageSize: number = 25, orderBy?: string, page: number = 1): Promise<any> {
+    const params: any = { pageSize, page };
     if (conditions) {
       params.conditions = conditions;
     }
@@ -113,8 +113,8 @@ export class ConnectWiseClient {
   }
 
   // Configuration Items
-  async getConfigurations(conditions?: string, pageSize: number = 25, orderBy?: string): Promise<any> {
-    const params: any = { pageSize };
+  async getConfigurations(conditions?: string, pageSize: number = 25, orderBy?: string, page: number = 1): Promise<any> {
+    const params: any = { pageSize, page };
     if (conditions) {
       params.conditions = conditions;
     }
