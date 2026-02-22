@@ -466,9 +466,64 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
           required: ['boardId'],
         },
       },
+      // Analytics tools
+      {
+        name: 'get_stale_tickets',
+        description: 'Find open tickets that may need attention based on age or hours logged',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            daysOld: {
+              type: 'number',
+              description: 'Flag tickets not updated in this many days (default: 14)',
+              default: 14,
+            },
+            maxHours: {
+              type: 'number',
+              description: 'Flag tickets with actualHours exceeding this value (optional)',
+            },
+            boardId: {
+              type: 'number',
+              description: 'Limit results to a specific board ID (optional)',
+            },
+            pageSize: {
+              type: 'number',
+              description: 'Number of results to return (default: 50)',
+              default: 50,
+            },
+          },
+        },
+      },
+      {
+        name: 'get_ticket_trends',
+        description: 'Retrieve tickets created within a lookback period for trend analysis',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            days: {
+              type: 'number',
+              description: 'Lookback period in days (default: 30)',
+              default: 30,
+            },
+            companyId: {
+              type: 'number',
+              description: 'Limit results to a specific company ID (optional)',
+            },
+            pageSize: {
+              type: 'number',
+              description: 'Number of results to return (default: 100)',
+              default: 100,
+            },
+          },
+        },
+      },
     ],
   };
 });
+
+function withActualHours(ticket: any): any {
+  return { ...ticket, actualHours: ticket.actualHours ?? 0 };
+}
 
 // Handle tool calls
 server.setRequestHandler(CallToolRequestSchema, async (request) => {
@@ -480,16 +535,11 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
       // Ticket operations
       case 'get_tickets': {
         const result = await cwClient.getTickets(params.conditions, params.pageSize, params.orderBy, params.page);
-        // Ensure actualHours is always present (defaults to 0 if not returned by API)
-        const ticketsWithHours = result.map((ticket: any) => ({
-          ...ticket,
-          actualHours: ticket.actualHours ?? 0,
-        }));
         return {
           content: [
             {
               type: 'text',
-              text: JSON.stringify(ticketsWithHours, null, 2),
+              text: JSON.stringify(result.map(withActualHours), null, 2),
             },
           ],
         };
@@ -497,16 +547,11 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 
       case 'get_ticket': {
         const result = await cwClient.getTicketById(params.ticketId);
-        // Ensure actualHours is always present (defaults to 0 if not returned by API)
-        const ticketWithHours = {
-          ...result,
-          actualHours: result.actualHours ?? 0,
-        };
         return {
           content: [
             {
               type: 'text',
-              text: JSON.stringify(ticketWithHours, null, 2),
+              text: JSON.stringify(withActualHours(result), null, 2),
             },
           ],
         };
@@ -725,6 +770,69 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
             {
               type: 'text',
               text: JSON.stringify(result, null, 2),
+            },
+          ],
+        };
+      }
+
+      // Analytics operations
+      case 'get_stale_tickets': {
+        const daysOld = params.daysOld ?? 14;
+        const maxHours = params.maxHours;
+        const boardId = params.boardId;
+        const pageSize = params.pageSize ?? 50;
+
+        const cutoffDate = new Date(Date.now() - daysOld * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+
+        let conditions = `status/closedFlag=false AND lastUpdated < [${cutoffDate}]`;
+        if (maxHours !== undefined) {
+          conditions = `status/closedFlag=false AND (lastUpdated < [${cutoffDate}] OR actualHours > ${maxHours})`;
+        }
+        if (boardId !== undefined) {
+          conditions += ` AND board/id=${boardId}`;
+        }
+
+        const tickets = await cwClient.getTickets(conditions, pageSize, 'lastUpdated asc');
+        const enriched = tickets.map((ticket: any) => {
+          const t = withActualHours(ticket);
+          const staleReasons: string[] = [];
+          if (t.lastUpdated && new Date(t.lastUpdated) < new Date(cutoffDate)) {
+            staleReasons.push(`No updates in over ${daysOld} days`);
+          }
+          if (maxHours !== undefined && t.actualHours > maxHours) {
+            staleReasons.push(`Hours logged (${t.actualHours}) exceeds threshold (${maxHours})`);
+          }
+          return { ...t, staleReasons };
+        });
+
+        return {
+          content: [
+            {
+              type: 'text',
+              text: JSON.stringify(enriched, null, 2),
+            },
+          ],
+        };
+      }
+
+      case 'get_ticket_trends': {
+        const days = params.days ?? 30;
+        const companyId = params.companyId;
+        const pageSize = params.pageSize ?? 100;
+
+        const cutoffDate = new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+
+        let conditions = `dateEntered > [${cutoffDate}]`;
+        if (companyId !== undefined) {
+          conditions += ` AND company/id=${companyId}`;
+        }
+
+        const tickets = await cwClient.getTickets(conditions, pageSize, 'dateEntered desc');
+        return {
+          content: [
+            {
+              type: 'text',
+              text: JSON.stringify(tickets.map(withActualHours), null, 2),
             },
           ],
         };
