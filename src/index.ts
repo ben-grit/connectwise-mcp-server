@@ -116,6 +116,36 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
           required: ['summary', 'company', 'board'],
         },
       },
+      {
+        name: 'update_ticket',
+        description: 'Update an existing service ticket (status, priority, summary, assigned member)',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            ticketId: {
+              type: 'number',
+              description: 'The ticket ID to update',
+            },
+            statusId: {
+              type: 'number',
+              description: 'New status ID (use get_statuses to find valid IDs)',
+            },
+            priorityId: {
+              type: 'number',
+              description: 'New priority ID',
+            },
+            summary: {
+              type: 'string',
+              description: 'New summary/title for the ticket',
+            },
+            assignedMemberId: {
+              type: 'number',
+              description: 'Member ID to assign the ticket to (use get_members to find valid IDs)',
+            },
+          },
+          required: ['ticketId'],
+        },
+      },
       // Company tools
       {
         name: 'get_companies',
@@ -356,7 +386,45 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
       }
 
       case 'create_ticket': {
-        const result = await cwClient.createTicket(params);
+        const { initialDescription, ...ticketBody } = params;
+        const result = await cwClient.createTicket(ticketBody);
+        if (initialDescription) {
+          await cwClient.addTicketNote(result.id, {
+            text: initialDescription,
+            detailDescriptionFlag: true,
+            internalAnalysisFlag: false,
+            resolutionFlag: false,
+          });
+        }
+        return {
+          content: [
+            {
+              type: 'text',
+              text: JSON.stringify(result, null, 2),
+            },
+          ],
+        };
+      }
+
+      case 'update_ticket': {
+        const { ticketId, statusId, priorityId, summary, assignedMemberId } = params;
+        const operations: any[] = [];
+        if (statusId !== undefined) {
+          operations.push({ op: 'replace', path: '/status/id', value: statusId });
+        }
+        if (priorityId !== undefined) {
+          operations.push({ op: 'replace', path: '/priority/id', value: priorityId });
+        }
+        if (summary !== undefined) {
+          operations.push({ op: 'replace', path: '/summary', value: summary });
+        }
+        if (assignedMemberId !== undefined) {
+          operations.push({ op: 'replace', path: '/owner/id', value: assignedMemberId });
+        }
+        if (operations.length === 0) {
+          throw new Error('update_ticket requires at least one field to update (statusId, priorityId, summary, or assignedMemberId)');
+        }
+        const result = await cwClient.updateTicket(ticketId, operations);
         return {
           content: [
             {

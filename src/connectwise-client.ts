@@ -58,6 +58,11 @@ export class ConnectWiseClient {
     return response.data;
   }
 
+  async addTicketNote(ticketId: number, noteData: any): Promise<any> {
+    const response = await this.client.post(`/service/tickets/${ticketId}/notes`, noteData);
+    return response.data;
+  }
+
   // Companies
   async getCompanies(conditions?: string, pageSize: number = 25, orderBy?: string, page: number = 1): Promise<any> {
     const params: any = { pageSize, page };
