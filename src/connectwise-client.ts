@@ -63,6 +63,13 @@ export class ConnectWiseClient {
     return response.data;
   }
 
+  async getTicketNotes(ticketId: number, pageSize: number = 25, page: number = 1): Promise<any> {
+    const response = await this.client.get(`/service/tickets/${ticketId}/notes`, {
+      params: { pageSize, page },
+    });
+    return response.data;
+  }
+
   // Companies
   async getCompanies(conditions?: string, pageSize: number = 25, orderBy?: string, page: number = 1): Promise<any> {
     const params: any = { pageSize, page };

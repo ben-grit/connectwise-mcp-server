@@ -146,6 +146,53 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
           required: ['ticketId'],
         },
       },
+      {
+        name: 'get_ticket_notes',
+        description: 'Get notes/comments on a service ticket',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            ticketId: {
+              type: 'number',
+              description: 'The ticket ID',
+            },
+            pageSize: {
+              type: 'number',
+              description: 'Number of notes to return (default: 25)',
+              default: 25,
+            },
+            page: {
+              type: 'number',
+              description: 'Page number for pagination (default: 1)',
+              default: 1,
+            },
+          },
+          required: ['ticketId'],
+        },
+      },
+      {
+        name: 'add_ticket_note',
+        description: 'Add a note to a service ticket (internal analysis or customer-visible detail)',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            ticketId: {
+              type: 'number',
+              description: 'The ticket ID to add the note to',
+            },
+            text: {
+              type: 'string',
+              description: 'The note text',
+            },
+            internalAnalysis: {
+              type: 'boolean',
+              description: 'If true, note is internal only. If false (default), note is customer-visible detail.',
+              default: false,
+            },
+          },
+          required: ['ticketId', 'text'],
+        },
+      },
       // Company tools
       {
         name: 'get_companies',
@@ -425,6 +472,36 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
           throw new Error('update_ticket requires at least one field to update (statusId, priorityId, summary, or assignedMemberId)');
         }
         const result = await cwClient.updateTicket(ticketId, operations);
+        return {
+          content: [
+            {
+              type: 'text',
+              text: JSON.stringify(result, null, 2),
+            },
+          ],
+        };
+      }
+
+      case 'get_ticket_notes': {
+        const result = await cwClient.getTicketNotes(params.ticketId, params.pageSize, params.page);
+        return {
+          content: [
+            {
+              type: 'text',
+              text: JSON.stringify(result, null, 2),
+            },
+          ],
+        };
+      }
+
+      case 'add_ticket_note': {
+        const internalAnalysis = params.internalAnalysis ?? false;
+        const result = await cwClient.addTicketNote(params.ticketId, {
+          text: params.text,
+          detailDescriptionFlag: !internalAnalysis,
+          internalAnalysisFlag: internalAnalysis,
+          resolutionFlag: false,
+        });
         return {
           content: [
             {
