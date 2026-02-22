@@ -7,9 +7,12 @@ A custom Model Context Protocol (MCP) server for ConnectWise PSA integration wit
 This MCP server provides tools to interact with ConnectWise PSA:
 
 ### Service Desk / Tickets
-- `get_tickets` - Search for service tickets with filtering
+- `get_tickets` - Search for service tickets with filtering and pagination
 - `get_ticket` - Get a specific ticket by ID
-- `create_ticket` - Create a new service ticket
+- `create_ticket` - Create a new service ticket (with optional initial description)
+- `update_ticket` - Update an existing ticket (status, priority, summary, assignee)
+- `get_ticket_notes` - Get notes/comments on a ticket
+- `add_ticket_note` - Add an internal or customer-visible note to a ticket
 
 ### Companies & Contacts
 - `get_companies` - Search for companies
@@ -24,6 +27,15 @@ This MCP server provides tools to interact with ConnectWise PSA:
 ### Configuration Items
 - `get_configurations` - Search for configuration items
 - `get_configuration` - Get a specific configuration item by ID
+
+### Members & Boards
+- `get_members` - List technicians/staff (useful for ticket assignment)
+- `get_boards` - List service boards (useful for ticket creation)
+- `get_statuses` - List valid statuses for a specific board
+
+### Analytics
+- `get_stale_tickets` - Find open tickets with no recent activity or excess hours
+- `get_ticket_trends` - Retrieve tickets over a lookback period for trend analysis
 
 ## Prerequisites
 
@@ -124,7 +136,12 @@ Once configured, you can use natural language to interact with ConnectWise:
 ### Tickets
 - "Show me all open tickets"
 - "Get ticket #12345"
-- "Create a new ticket for Acme Corp on the Service Desk board"
+- "Create a new ticket for Acme Corp on the Service Desk board with a description of the issue"
+- "Update ticket #12345 to Closed status"
+- "Change the priority of ticket #12345 to High"
+- "Assign ticket #12345 to technician John Smith"
+- "Show me the notes on ticket #12345"
+- "Add an internal note to ticket #12345 saying the client has been contacted"
 
 ### Companies
 - "Find all companies in Chicago"
@@ -142,6 +159,17 @@ Once configured, you can use natural language to interact with ConnectWise:
 - "Show configuration items for company 250"
 - "Get configuration details for config ID 1500"
 
+### Members & Boards
+- "List all technicians"
+- "What service boards are available?"
+- "What statuses does board 1 have?"
+
+### Analytics
+- "Show me stale tickets older than 30 days"
+- "Find tickets with more than 10 hours logged"
+- "Show ticket trends for the last 60 days for company 250"
+- "What recurring issues has Acme Corp had over the past 90 days?"
+
 ## ConnectWise API Conditions
 
 When using search functions, you can use ConnectWise API conditions syntax:
@@ -149,6 +177,12 @@ When using search functions, you can use ConnectWise API conditions syntax:
 - `status/name='New'` - Find tickets with "New" status
 - `company/name contains 'Acme'` - Find items for companies with "Acme" in the name
 - `id > 1000` - Find items with ID greater than 1000
+
+## Pagination
+
+All list tools support `pageSize` (default: 25) and `page` (default: 1) parameters to paginate through large result sets.
+
+Example: "Show me the second page of open tickets with 50 results per page"
 
 ## Development
 
