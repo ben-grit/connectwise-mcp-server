@@ -1,0 +1,4 @@
+# Mark TypeScript files as the primary language
+*.ts linguist-detectable=true
+*.js linguist-detectable=false
+package-lock.json linguist-generated=true
