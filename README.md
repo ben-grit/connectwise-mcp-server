@@ -97,7 +97,7 @@ Add the MCP server to your Claude Desktop configuration file:
     "connectwise": {
       "command": "node",
       "args": [
-        "C:\\Users\\Ben\\OneDrive - Grassroots IT\\WIP\\claude-code\\connectwise-mcp-server\\build\\index.js"
+        "C:\\path\\to\\connectwise-mcp-server\\build\\index.js"
       ],
       "env": {
         "CONNECTWISE_COMPANY_ID": "your_company_id",
