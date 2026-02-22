@@ -298,11 +298,16 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
       // Ticket operations
       case 'get_tickets': {
         const result = await cwClient.getTickets(params.conditions, params.pageSize, params.orderBy);
+        // Ensure actualHours is always present (defaults to 0 if not returned by API)
+        const ticketsWithHours = result.map((ticket: any) => ({
+          ...ticket,
+          actualHours: ticket.actualHours ?? 0,
+        }));
         return {
           content: [
             {
               type: 'text',
-              text: JSON.stringify(result, null, 2),
+              text: JSON.stringify(ticketsWithHours, null, 2),
             },
           ],
         };
@@ -310,11 +315,16 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 
       case 'get_ticket': {
         const result = await cwClient.getTicketById(params.ticketId);
+        // Ensure actualHours is always present (defaults to 0 if not returned by API)
+        const ticketWithHours = {
+          ...result,
+          actualHours: result.actualHours ?? 0,
+        };
         return {
           content: [
             {
               type: 'text',
-              text: JSON.stringify(result, null, 2),
+              text: JSON.stringify(ticketWithHours, null, 2),
             },
           ],
         };
