@@ -31,10 +31,13 @@ export class ConnectWiseClient {
   }
 
   // Service Desk / Tickets
-  async getTickets(conditions?: string, pageSize: number = 25): Promise<any> {
+  async getTickets(conditions?: string, pageSize: number = 25, orderBy?: string): Promise<any> {
     const params: any = { pageSize };
     if (conditions) {
       params.conditions = conditions;
+    }
+    if (orderBy) {
+      params.orderBy = orderBy;
     }
     const response = await this.client.get('/service/tickets', { params });
     return response.data;
@@ -56,10 +59,13 @@ export class ConnectWiseClient {
   }
 
   // Companies
-  async getCompanies(conditions?: string, pageSize: number = 25): Promise<any> {
+  async getCompanies(conditions?: string, pageSize: number = 25, orderBy?: string): Promise<any> {
     const params: any = { pageSize };
     if (conditions) {
       params.conditions = conditions;
+    }
+    if (orderBy) {
+      params.orderBy = orderBy;
     }
     const response = await this.client.get('/company/companies', { params });
     return response.data;
@@ -71,10 +77,13 @@ export class ConnectWiseClient {
   }
 
   // Contacts
-  async getContacts(conditions?: string, pageSize: number = 25): Promise<any> {
+  async getContacts(conditions?: string, pageSize: number = 25, orderBy?: string): Promise<any> {
     const params: any = { pageSize };
     if (conditions) {
       params.conditions = conditions;
+    }
+    if (orderBy) {
+      params.orderBy = orderBy;
     }
     const response = await this.client.get('/company/contacts', { params });
     return response.data;
@@ -86,10 +95,13 @@ export class ConnectWiseClient {
   }
 
   // Time Entries
-  async getTimeEntries(conditions?: string, pageSize: number = 25): Promise<any> {
+  async getTimeEntries(conditions?: string, pageSize: number = 25, orderBy?: string): Promise<any> {
     const params: any = { pageSize };
     if (conditions) {
       params.conditions = conditions;
+    }
+    if (orderBy) {
+      params.orderBy = orderBy;
     }
     const response = await this.client.get('/time/entries', { params });
     return response.data;
@@ -101,10 +113,13 @@ export class ConnectWiseClient {
   }
 
   // Configuration Items
-  async getConfigurations(conditions?: string, pageSize: number = 25): Promise<any> {
+  async getConfigurations(conditions?: string, pageSize: number = 25, orderBy?: string): Promise<any> {
     const params: any = { pageSize };
     if (conditions) {
       params.conditions = conditions;
+    }
+    if (orderBy) {
+      params.orderBy = orderBy;
     }
     const response = await this.client.get('/company/configurations', { params });
     return response.data;

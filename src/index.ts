@@ -56,6 +56,10 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
               description: 'Number of results to return (default: 25, max: 1000)',
               default: 25,
             },
+            orderBy: {
+              type: 'string',
+              description: 'Field to sort by with optional direction (e.g., "dateEntered desc", "id asc", "lastUpdated desc")',
+            },
           },
         },
       },
@@ -123,6 +127,10 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
               description: 'Number of results to return (default: 25)',
               default: 25,
             },
+            orderBy: {
+              type: 'string',
+              description: 'Field to sort by with optional direction (e.g., "name asc", "dateAcquired desc")',
+            },
           },
         },
       },
@@ -156,6 +164,10 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
               description: 'Number of results to return (default: 25)',
               default: 25,
             },
+            orderBy: {
+              type: 'string',
+              description: 'Field to sort by with optional direction (e.g., "lastName asc", "id desc")',
+            },
           },
         },
       },
@@ -188,6 +200,10 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
               type: 'number',
               description: 'Number of results to return (default: 25)',
               default: 25,
+            },
+            orderBy: {
+              type: 'string',
+              description: 'Field to sort by with optional direction (e.g., "timeStart desc", "id desc")',
             },
           },
         },
@@ -247,6 +263,10 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
               description: 'Number of results to return (default: 25)',
               default: 25,
             },
+            orderBy: {
+              type: 'string',
+              description: 'Field to sort by with optional direction (e.g., "name asc", "id desc")',
+            },
           },
         },
       },
@@ -277,7 +297,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
     switch (name) {
       // Ticket operations
       case 'get_tickets': {
-        const result = await cwClient.getTickets(params.conditions, params.pageSize);
+        const result = await cwClient.getTickets(params.conditions, params.pageSize, params.orderBy);
         return {
           content: [
             {
@@ -314,7 +334,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 
       // Company operations
       case 'get_companies': {
-        const result = await cwClient.getCompanies(params.conditions, params.pageSize);
+        const result = await cwClient.getCompanies(params.conditions, params.pageSize, params.orderBy);
         return {
           content: [
             {
@@ -339,7 +359,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 
       // Contact operations
       case 'get_contacts': {
-        const result = await cwClient.getContacts(params.conditions, params.pageSize);
+        const result = await cwClient.getContacts(params.conditions, params.pageSize, params.orderBy);
         return {
           content: [
             {
@@ -364,7 +384,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 
       // Time Entry operations
       case 'get_time_entries': {
-        const result = await cwClient.getTimeEntries(params.conditions, params.pageSize);
+        const result = await cwClient.getTimeEntries(params.conditions, params.pageSize, params.orderBy);
         return {
           content: [
             {
@@ -389,7 +409,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 
       // Configuration operations
       case 'get_configurations': {
-        const result = await cwClient.getConfigurations(params.conditions, params.pageSize);
+        const result = await cwClient.getConfigurations(params.conditions, params.pageSize, params.orderBy);
         return {
           content: [
             {
