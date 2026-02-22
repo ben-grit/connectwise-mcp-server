@@ -141,4 +141,37 @@ export class ConnectWiseClient {
     const response = await this.client.get(`/company/configurations/${configId}`);
     return response.data;
   }
+
+  // Members
+  async getMembers(conditions?: string, pageSize: number = 25, page: number = 1, orderBy?: string): Promise<any> {
+    const params: any = { pageSize, page };
+    if (conditions) {
+      params.conditions = conditions;
+    }
+    if (orderBy) {
+      params.orderBy = orderBy;
+    }
+    const response = await this.client.get('/system/members', { params });
+    return response.data;
+  }
+
+  // Service Boards
+  async getBoards(conditions?: string, pageSize: number = 25, page: number = 1): Promise<any> {
+    const params: any = { pageSize, page };
+    if (conditions) {
+      params.conditions = conditions;
+    }
+    const response = await this.client.get('/service/boards', { params });
+    return response.data;
+  }
+
+  // Board Statuses
+  async getStatuses(boardId: number, conditions?: string, pageSize: number = 25, page: number = 1): Promise<any> {
+    const params: any = { pageSize, page };
+    if (conditions) {
+      params.conditions = conditions;
+    }
+    const response = await this.client.get(`/service/boards/${boardId}/statuses`, { params });
+    return response.data;
+  }
 }

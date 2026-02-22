@@ -386,6 +386,86 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
           required: ['configId'],
         },
       },
+      // Member tools
+      {
+        name: 'get_members',
+        description: 'Search for members (technicians/staff) in ConnectWise PSA',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            conditions: {
+              type: 'string',
+              description: 'ConnectWise API conditions string for filtering (optional)',
+            },
+            pageSize: {
+              type: 'number',
+              description: 'Number of results to return (default: 25)',
+              default: 25,
+            },
+            page: {
+              type: 'number',
+              description: 'Page number for pagination (default: 1)',
+              default: 1,
+            },
+            orderBy: {
+              type: 'string',
+              description: 'Field to sort by with optional direction (e.g., "lastName asc")',
+            },
+          },
+        },
+      },
+      // Board tools
+      {
+        name: 'get_boards',
+        description: 'Search for service boards in ConnectWise PSA',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            conditions: {
+              type: 'string',
+              description: 'ConnectWise API conditions string for filtering (optional)',
+            },
+            pageSize: {
+              type: 'number',
+              description: 'Number of results to return (default: 25)',
+              default: 25,
+            },
+            page: {
+              type: 'number',
+              description: 'Page number for pagination (default: 1)',
+              default: 1,
+            },
+          },
+        },
+      },
+      {
+        name: 'get_statuses',
+        description: 'Get available statuses for a specific service board',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            boardId: {
+              type: 'number',
+              description: 'The board ID to retrieve statuses for (use get_boards to find board IDs)',
+            },
+            conditions: {
+              type: 'string',
+              description: 'ConnectWise API conditions string for filtering (optional)',
+            },
+            pageSize: {
+              type: 'number',
+              description: 'Number of results to return (default: 25)',
+              default: 25,
+            },
+            page: {
+              type: 'number',
+              description: 'Page number for pagination (default: 1)',
+              default: 1,
+            },
+          },
+          required: ['boardId'],
+        },
+      },
     ],
   };
 });
@@ -602,6 +682,44 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 
       case 'get_configuration': {
         const result = await cwClient.getConfigurationById(params.configId);
+        return {
+          content: [
+            {
+              type: 'text',
+              text: JSON.stringify(result, null, 2),
+            },
+          ],
+        };
+      }
+
+      // Member operations
+      case 'get_members': {
+        const result = await cwClient.getMembers(params.conditions, params.pageSize, params.page, params.orderBy);
+        return {
+          content: [
+            {
+              type: 'text',
+              text: JSON.stringify(result, null, 2),
+            },
+          ],
+        };
+      }
+
+      // Board operations
+      case 'get_boards': {
+        const result = await cwClient.getBoards(params.conditions, params.pageSize, params.page);
+        return {
+          content: [
+            {
+              type: 'text',
+              text: JSON.stringify(result, null, 2),
+            },
+          ],
+        };
+      }
+
+      case 'get_statuses': {
+        const result = await cwClient.getStatuses(params.boardId, params.conditions, params.pageSize, params.page);
         return {
           content: [
             {
