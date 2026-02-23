@@ -1047,6 +1047,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
           name: c.name,
           company: c.company?.name,
           lastUpdated: c._info?.lastUpdated,
+          deviceIdentifier: c.deviceIdentifier || '',
           osInfo: c.osInfo || c.osType || '',
           serialNumber: c.serialNumber || '',
         }));
