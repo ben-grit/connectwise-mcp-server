@@ -386,6 +386,63 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
           required: ['configId'],
         },
       },
+      {
+        name: 'update_configuration',
+        description: 'Update an existing configuration item (status, name, serial number, notes, active flag)',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            configId: {
+              type: 'number',
+              description: 'The configuration ID to update',
+            },
+            statusId: {
+              type: 'number',
+              description: 'New status ID (use get_configuration_statuses to find valid IDs)',
+            },
+            name: {
+              type: 'string',
+              description: 'New name for the configuration',
+            },
+            serialNumber: {
+              type: 'string',
+              description: 'New serial number',
+            },
+            notes: {
+              type: 'string',
+              description: 'New notes',
+            },
+            activeFlag: {
+              type: 'boolean',
+              description: 'Set the active flag (true/false)',
+            },
+          },
+          required: ['configId'],
+        },
+      },
+      {
+        name: 'get_configuration_statuses',
+        description: 'Get available statuses for configuration items (e.g. Active, Inactive, Automate Inactive)',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            conditions: {
+              type: 'string',
+              description: 'ConnectWise API conditions string for filtering (optional)',
+            },
+            pageSize: {
+              type: 'number',
+              description: 'Number of results to return (default: 25)',
+              default: 25,
+            },
+            page: {
+              type: 'number',
+              description: 'Page number for pagination (default: 1)',
+              default: 1,
+            },
+          },
+        },
+      },
       // Member tools
       {
         name: 'get_members',
@@ -490,7 +547,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
       },
       {
         name: 'get_stale_configurations',
-        description: 'Find inactive configuration items that have not been updated in a given number of days',
+        description: 'Find active configuration items that have not been updated in a given number of days',
         inputSchema: {
           type: 'object',
           properties: {
@@ -840,6 +897,40 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         };
       }
 
+      case 'update_configuration': {
+        const { configId, statusId, name: configName, serialNumber, notes, activeFlag } = params;
+        const operations: any[] = [];
+        if (statusId !== undefined) {
+          operations.push({ op: 'replace', path: '/status/id', value: statusId });
+        }
+        if (configName !== undefined) {
+          operations.push({ op: 'replace', path: '/name', value: configName });
+        }
+        if (serialNumber !== undefined) {
+          operations.push({ op: 'replace', path: '/serialNumber', value: serialNumber });
+        }
+        if (notes !== undefined) {
+          operations.push({ op: 'replace', path: '/notes', value: notes });
+        }
+        if (activeFlag !== undefined) {
+          operations.push({ op: 'replace', path: '/activeFlag', value: activeFlag });
+        }
+        if (operations.length === 0) {
+          throw new Error('update_configuration requires at least one field to update (statusId, name, serialNumber, notes, or activeFlag)');
+        }
+        const result = await cwClient.updateConfiguration(configId, operations);
+        return {
+          content: [{ type: 'text', text: JSON.stringify(result, null, 2) }],
+        };
+      }
+
+      case 'get_configuration_statuses': {
+        const result = await cwClient.getConfigurationStatuses(params.conditions, params.pageSize, params.page);
+        return {
+          content: [{ type: 'text', text: JSON.stringify(result, null, 2) }],
+        };
+      }
+
       // Member operations
       case 'get_members': {
         const result = await cwClient.getMembers(params.conditions, params.pageSize, params.page, params.orderBy);
@@ -891,7 +982,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         const pageSize = params.pageSize ?? 100;
         const cutoffDate = new Date(Date.now() - daysOld * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
 
-        const parts: string[] = [`activeFlag = false`, `lastUpdated < [${cutoffDate}]`];
+        const parts: string[] = [`activeFlag = true`, `lastUpdated < [${cutoffDate}]`];
         if (params.typeFilter) parts.push(`type/name = "${params.typeFilter}"`);
         if (params.companyId !== undefined) parts.push(`company/id = ${params.companyId}`);
         const conditions = parts.join(' AND ');

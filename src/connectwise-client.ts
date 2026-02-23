@@ -142,6 +142,18 @@ export class ConnectWiseClient {
     return response.data;
   }
 
+  async updateConfiguration(configId: number, operations: any[]): Promise<any> {
+    const response = await this.client.patch(`/company/configurations/${configId}`, operations);
+    return response.data;
+  }
+
+  async getConfigurationStatuses(conditions?: string, pageSize: number = 25, page: number = 1): Promise<any> {
+    const params: any = { pageSize, page };
+    if (conditions) params.conditions = conditions;
+    const response = await this.client.get('/company/configurations/statuses', { params });
+    return response.data;
+  }
+
   private async getAllConfigurationPages(conditions?: string): Promise<any[]> {
     const all: any[] = [];
     let page = 1;
