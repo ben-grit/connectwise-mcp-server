@@ -573,6 +573,29 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
         },
       },
       {
+        name: 'get_stale_workstations',
+        description: 'Find active Managed Workstation configurations that have not been updated in a given number of days. Returns a compact summary to avoid token overflow.',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            daysOld: {
+              type: 'number',
+              description: 'Flag workstations not updated in this many days (default: 365)',
+              default: 365,
+            },
+            companyId: {
+              type: 'number',
+              description: 'Limit to a specific company ID (optional)',
+            },
+            pageSize: {
+              type: 'number',
+              description: 'Number of results to return (default: 100)',
+              default: 100,
+            },
+          },
+        },
+      },
+      {
         name: 'find_duplicate_configurations',
         description: 'Find configuration items that share the same name within the same company',
         inputSchema: {
@@ -994,6 +1017,50 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         });
         return {
           content: [{ type: 'text', text: JSON.stringify(enriched, null, 2) }],
+        };
+      }
+
+      case 'get_stale_workstations': {
+        const daysOld = params.daysOld ?? 365;
+        const pageSize = params.pageSize ?? 100;
+        const cutoffDate = new Date(Date.now() - daysOld * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+
+        const parts: string[] = [
+          `activeFlag = true`,
+          `lastUpdated < [${cutoffDate}]`,
+          `type/name = "Managed Workstation"`,
+        ];
+        if (params.companyId !== undefined) parts.push(`company/id = ${params.companyId}`);
+        const conditions = parts.join(' AND ');
+
+        const configs = await cwClient.getConfigurations(conditions, pageSize, 'lastUpdated asc');
+
+        // Build compact summary to avoid token overflow
+        const byCompany: Record<string, number> = {};
+        for (const c of configs) {
+          const name = c.company?.name ?? 'Unknown';
+          byCompany[name] = (byCompany[name] || 0) + 1;
+        }
+
+        const compact = configs.map((c: any) => ({
+          id: c.id,
+          name: c.name,
+          company: c.company?.name,
+          lastUpdated: c._info?.lastUpdated,
+          osInfo: c.osInfo || c.osType || '',
+          serialNumber: c.serialNumber || '',
+        }));
+
+        return {
+          content: [{
+            type: 'text',
+            text: JSON.stringify({
+              totalReturned: configs.length,
+              daysOld,
+              byCompany,
+              workstations: compact,
+            }, null, 2),
+          }],
         };
       }
 
