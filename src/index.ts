@@ -481,6 +481,10 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
               type: 'number',
               description: 'Limit to a specific company ID (optional)',
             },
+            statusFilter: {
+              type: 'string',
+              description: 'Limit to a specific status name (e.g. "Active"). Omit to include all statuses (Active, Inactive, Automate Inactive, etc.)',
+            },
           },
         },
       },
@@ -876,7 +880,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 
       // Configuration analytics operations
       case 'get_configuration_summary': {
-        const result = await cwClient.getConfigurationSummary(params.typeFilter, params.companyId);
+        const result = await cwClient.getConfigurationSummary(params.typeFilter, params.companyId, params.statusFilter);
         return {
           content: [{ type: 'text', text: JSON.stringify(result, null, 2) }],
         };

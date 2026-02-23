@@ -154,10 +154,11 @@ export class ConnectWiseClient {
     return all;
   }
 
-  async getConfigurationSummary(typeFilter?: string, companyId?: number): Promise<any> {
+  async getConfigurationSummary(typeFilter?: string, companyId?: number, statusFilter?: string): Promise<any> {
     const parts: string[] = [];
     if (typeFilter) parts.push(`type/name = "${typeFilter}"`);
     if (companyId !== undefined) parts.push(`company/id = ${companyId}`);
+    if (statusFilter) parts.push(`status/name = "${statusFilter}"`);
     const conditions = parts.length > 0 ? parts.join(' AND ') : undefined;
 
     const configs = await this.getAllConfigurationPages(conditions);
