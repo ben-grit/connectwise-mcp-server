@@ -142,6 +142,59 @@ export class ConnectWiseClient {
     return response.data;
   }
 
+  private async getAllConfigurationPages(conditions?: string): Promise<any[]> {
+    const all: any[] = [];
+    let page = 1;
+    while (true) {
+      const batch = await this.getConfigurations(conditions, 1000, undefined, page);
+      all.push(...batch);
+      if (batch.length < 1000) break;
+      page++;
+    }
+    return all;
+  }
+
+  async getConfigurationSummary(typeFilter?: string, companyId?: number): Promise<any> {
+    const parts: string[] = [];
+    if (typeFilter) parts.push(`type/name = "${typeFilter}"`);
+    if (companyId !== undefined) parts.push(`company/id = ${companyId}`);
+    const conditions = parts.length > 0 ? parts.join(' AND ') : undefined;
+
+    const configs = await this.getAllConfigurationPages(conditions);
+
+    const byStatus: Record<string, number> = {};
+    const byOS: Record<string, number> = {};
+    const byCompany: Record<string, number> = {};
+    let missingSerial = 0;
+    let missingIP = 0;
+    let missingModel = 0;
+
+    for (const c of configs) {
+      const status = c.status?.name ?? 'No Status';
+      byStatus[status] = (byStatus[status] ?? 0) + 1;
+
+      const os = c.osType?.trim() || 'Unknown';
+      byOS[os] = (byOS[os] ?? 0) + 1;
+
+      const company = c.company?.name ?? 'No Company';
+      byCompany[company] = (byCompany[company] ?? 0) + 1;
+
+      if (!c.serialNumber?.trim()) missingSerial++;
+      if (!c.ipAddress?.trim()) missingIP++;
+      if (!c.modelNumber?.trim()) missingModel++;
+    }
+
+    return {
+      totalCount: configs.length,
+      byStatus,
+      byOS,
+      byCompany,
+      missingSerial,
+      missingIP,
+      missingModel,
+    };
+  }
+
   // Members
   async getMembers(conditions?: string, pageSize: number = 25, page: number = 1, orderBy?: string): Promise<any> {
     const params: any = { pageSize, page };

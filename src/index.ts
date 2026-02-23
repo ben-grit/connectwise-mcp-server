@@ -466,6 +466,105 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
           required: ['boardId'],
         },
       },
+      // Configuration analytics tools
+      {
+        name: 'get_configuration_summary',
+        description: 'Get an aggregated summary of configuration items (counts by status, OS, company) without returning raw records. Avoids token overflow on large datasets.',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            typeFilter: {
+              type: 'string',
+              description: 'Limit to a specific configuration type name (e.g. "Managed Workstation")',
+            },
+            companyId: {
+              type: 'number',
+              description: 'Limit to a specific company ID (optional)',
+            },
+          },
+        },
+      },
+      {
+        name: 'get_stale_configurations',
+        description: 'Find inactive configuration items that have not been updated in a given number of days',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            daysOld: {
+              type: 'number',
+              description: 'Flag configs not updated in this many days (default: 365)',
+              default: 365,
+            },
+            typeFilter: {
+              type: 'string',
+              description: 'Limit to a specific configuration type name (e.g. "Managed Workstation")',
+            },
+            companyId: {
+              type: 'number',
+              description: 'Limit to a specific company ID (optional)',
+            },
+            pageSize: {
+              type: 'number',
+              description: 'Number of results to return (default: 100)',
+              default: 100,
+            },
+          },
+        },
+      },
+      {
+        name: 'find_duplicate_configurations',
+        description: 'Find configuration items that share the same name within the same company',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            typeFilter: {
+              type: 'string',
+              description: 'Limit to a specific configuration type name (e.g. "Managed Workstation")',
+            },
+            companyId: {
+              type: 'number',
+              description: 'Limit to a specific company ID (optional)',
+            },
+            pageSize: {
+              type: 'number',
+              description: 'How many configs to scan (default: 1000)',
+              default: 1000,
+            },
+          },
+        },
+      },
+      {
+        name: 'get_configurations_by_type',
+        description: 'Search configuration items by type name (convenience wrapper — no need to write raw conditions syntax)',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            typeName: {
+              type: 'string',
+              description: 'Configuration type name, e.g. "Managed Workstation" or "Managed Server"',
+            },
+            conditions: {
+              type: 'string',
+              description: 'Additional ConnectWise conditions to AND with the type filter (optional)',
+            },
+            pageSize: {
+              type: 'number',
+              description: 'Number of results to return (default: 25)',
+              default: 25,
+            },
+            page: {
+              type: 'number',
+              description: 'Page number for pagination (default: 1)',
+              default: 1,
+            },
+            orderBy: {
+              type: 'string',
+              description: 'Field to sort by with optional direction (e.g. "name asc", "company/name asc")',
+            },
+          },
+          required: ['typeName'],
+        },
+      },
       // Analytics tools
       {
         name: 'get_stale_tickets',
@@ -772,6 +871,72 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
               text: JSON.stringify(result, null, 2),
             },
           ],
+        };
+      }
+
+      // Configuration analytics operations
+      case 'get_configuration_summary': {
+        const result = await cwClient.getConfigurationSummary(params.typeFilter, params.companyId);
+        return {
+          content: [{ type: 'text', text: JSON.stringify(result, null, 2) }],
+        };
+      }
+
+      case 'get_stale_configurations': {
+        const daysOld = params.daysOld ?? 365;
+        const pageSize = params.pageSize ?? 100;
+        const cutoffDate = new Date(Date.now() - daysOld * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+
+        const parts: string[] = [`activeFlag = false`, `lastUpdated < [${cutoffDate}]`];
+        if (params.typeFilter) parts.push(`type/name = "${params.typeFilter}"`);
+        if (params.companyId !== undefined) parts.push(`company/id = ${params.companyId}`);
+        const conditions = parts.join(' AND ');
+
+        const configs = await cwClient.getConfigurations(conditions, pageSize, 'lastUpdated asc');
+        const enriched = configs.map((c: any) => {
+          const staleReasons: string[] = [`Not updated in over ${daysOld} days`];
+          return { ...c, staleReasons };
+        });
+        return {
+          content: [{ type: 'text', text: JSON.stringify(enriched, null, 2) }],
+        };
+      }
+
+      case 'find_duplicate_configurations': {
+        const pageSize = params.pageSize ?? 1000;
+        const parts: string[] = [];
+        if (params.typeFilter) parts.push(`type/name = "${params.typeFilter}"`);
+        if (params.companyId !== undefined) parts.push(`company/id = ${params.companyId}`);
+        const conditions = parts.length > 0 ? parts.join(' AND ') : undefined;
+
+        const configs = await cwClient.getConfigurations(conditions, pageSize);
+        const groups: Record<string, any[]> = {};
+        for (const c of configs) {
+          const key = `${c.company?.id ?? 'none'}||${c.name}`;
+          if (!groups[key]) groups[key] = [];
+          groups[key].push(c);
+        }
+        const duplicates = Object.values(groups)
+          .filter(g => g.length > 1)
+          .map(g => ({
+            name: g[0].name,
+            company: g[0].company?.name ?? 'Unknown',
+            count: g.length,
+            ids: g.map((c: any) => c.id),
+            items: g,
+          }))
+          .sort((a, b) => b.count - a.count);
+        return {
+          content: [{ type: 'text', text: JSON.stringify(duplicates, null, 2) }],
+        };
+      }
+
+      case 'get_configurations_by_type': {
+        let cond = `type/name = "${params.typeName}"`;
+        if (params.conditions) cond += ` AND ${params.conditions}`;
+        const result = await cwClient.getConfigurations(cond, params.pageSize, params.orderBy, params.page);
+        return {
+          content: [{ type: 'text', text: JSON.stringify(result, null, 2) }],
         };
       }
 
