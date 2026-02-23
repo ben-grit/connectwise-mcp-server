@@ -486,7 +486,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
       },
       {
         name: 'get_stale_configurations',
-        description: 'Find inactive configuration items that have not been updated in a given number of days',
+        description: 'Find active configuration items that have not been updated in a given number of days',
         inputSchema: {
           type: 'object',
           properties: {
@@ -887,7 +887,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         const pageSize = params.pageSize ?? 100;
         const cutoffDate = new Date(Date.now() - daysOld * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
 
-        const parts: string[] = [`activeFlag = false`, `lastUpdated < [${cutoffDate}]`];
+        const parts: string[] = [`activeFlag = true`, `lastUpdated < [${cutoffDate}]`];
         if (params.typeFilter) parts.push(`type/name = "${params.typeFilter}"`);
         if (params.companyId !== undefined) parts.push(`company/id = ${params.companyId}`);
         const conditions = parts.join(' AND ');
