@@ -12,6 +12,11 @@ export class ConnectWiseClient {
   private client: AxiosInstance;
   private config: ConnectWiseConfig;
 
+  // Cache closed status names so we don't re-fetch on every call
+  private closedStatusNamesCache: string[] | null = null;
+  private closedStatusNamesCacheTime: number = 0;
+  private static readonly STATUS_CACHE_TTL = 60 * 60 * 1000; // 1 hour
+
   constructor(config: ConnectWiseConfig) {
     this.config = config;
 
@@ -239,5 +244,34 @@ export class ConnectWiseClient {
     }
     const response = await this.client.get(`/service/boards/${boardId}/statuses`, { params });
     return response.data;
+  }
+
+  // Closed-status helpers — replaces unreliable closedFlag with board status definitions
+  async getClosedStatusNames(): Promise<string[]> {
+    if (this.closedStatusNamesCache && Date.now() - this.closedStatusNamesCacheTime < ConnectWiseClient.STATUS_CACHE_TTL) {
+      return this.closedStatusNamesCache;
+    }
+
+    const boards = await this.getBoards(undefined, 100);
+    const closedNames = new Set<string>();
+
+    for (const board of boards) {
+      const statuses = await this.getStatuses(board.id, undefined, 100);
+      for (const status of statuses) {
+        if (status.closedStatus) {
+          closedNames.add(status.name);
+        }
+      }
+    }
+
+    this.closedStatusNamesCache = Array.from(closedNames);
+    this.closedStatusNamesCacheTime = Date.now();
+    return this.closedStatusNamesCache;
+  }
+
+  buildOpenCondition(closedStatusNames: string[]): string {
+    if (closedStatusNames.length === 0) return '';
+    const escaped = closedStatusNames.map(n => `'${n.replace(/'/g, "''")}'`).join(',');
+    return `status/name not in (${escaped})`;
   }
 }

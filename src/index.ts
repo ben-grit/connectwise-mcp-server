@@ -1112,9 +1112,12 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 
         const cutoffDate = new Date(Date.now() - daysOld * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
 
-        let conditions = `status/closedFlag=false AND lastUpdated < [${cutoffDate}]`;
+        const closedStatusNames = await cwClient.getClosedStatusNames();
+        const openCondition = cwClient.buildOpenCondition(closedStatusNames);
+
+        let conditions = `${openCondition} AND lastUpdated < [${cutoffDate}]`;
         if (maxHours !== undefined) {
-          conditions = `status/closedFlag=false AND (lastUpdated < [${cutoffDate}] OR actualHours > ${maxHours})`;
+          conditions = `${openCondition} AND (lastUpdated < [${cutoffDate}] OR actualHours > ${maxHours})`;
         }
         if (boardId !== undefined) {
           conditions += ` AND board/id=${boardId}`;
