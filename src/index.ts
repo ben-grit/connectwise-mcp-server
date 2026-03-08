@@ -43,7 +43,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
       // Ticket tools
       {
         name: 'get_tickets',
-        description: 'Search for service tickets in ConnectWise PSA. Use conditions parameter for filtering (e.g., "status/name=\'New\'").',
+        description: 'Search for service tickets in ConnectWise PSA. Use conditions parameter for filtering (e.g., "status/name=\'New\'"). IMPORTANT: Do NOT use closedFlag for filtering open/closed tickets — it is unreliable. Instead filter by status/name (e.g., "status/name not in (\'Closed\',\'Completed\')") or use the get_stale_tickets tool which handles this automatically.',
         inputSchema: {
           type: 'object',
           properties: {
